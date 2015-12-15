@@ -81,6 +81,10 @@ if ($item->maybeTemplate()) {
    $where .= " AND `is_template` = '0' ";
 }
 
+if(!isset($_GET['searchText'])){
+   $_GET['searchText'] = '';
+}
+
 if ((strlen($_GET['searchText']) > 0)) {
    $search = Search::makeTextSearch($_GET['searchText']);
 

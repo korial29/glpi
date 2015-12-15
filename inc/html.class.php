@@ -1055,6 +1055,7 @@ class Html {
       echo Html::css($CFG_GLPI["root_doc"]."/css/jstree/style.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/rateit/rateit.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/select2/select2.css");
+      echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/select2/select2-bootstrap.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/qtip2/jquery.qtip.min.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/jcrop/jquery.Jcrop.min.css");
       echo Html::css($CFG_GLPI["root_doc"]."/lib/jqueryplugins/spectrum-colorpicker/spectrum.css");
@@ -1109,7 +1110,7 @@ class Html {
 
       // PLugins jquery
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/backtotop/BackToTop.min.jquery.js");
-      echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/select2/select2.min.js");
+      echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/select2/select2.js");
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/qtip2/jquery.qtip.min.js");
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/jstree/jquery.jstree.js");
       echo Html::script($CFG_GLPI["root_doc"]."/lib/jqueryplugins/rateit/jquery.rateit.min.js");
@@ -4547,20 +4548,50 @@ class Html {
       }
       $js = "$('#$id').select2({
                   width: '$width',
-                  closeOnSelect: false,
-                  dropdownAutoWidth: true,
+                  minimumInputLength: 0,
                   quietMillis: 100,
+                  dropdownAutoWidth: true,
                   minimumResultsForSearch: ".$CFG_GLPI['ajax_limit_count'].",
-                  formatSelection: function(object, container) {
-                     text = object.text;
-                     if (object.element[0].parentElement.nodeName == 'OPTGROUP') {
-                        text = object.element[0].parentElement.getAttribute('label') + ' - ' + text;
-                     }
-                     return text;
-                  }
-
-             });";
+                  theme: 'bootstrap',
+                  closeOnSelect: false
+             });
+             $( '.select2-container--bootstrap' ).addClass( 'input-sm' );";
       return Html::scriptBlock($js);
+   }
+   
+   /**
+    * Hack for All / None because select2 does not provide it
+    *
+    * @param $field_id   string   id of the dom element
+    * @since version 0.91.
+    *
+    * @return String
+   **/
+   static function jsSelectAllDropdown($field_id){
+      $select   = __('All');
+      $deselect = __('None');
+      $output  = "<div class='invisible' id='selectallbuttons_$field_id'>";
+      $output  .= "<div class='select2-actionable-menu'>";
+      $output  .= "<a class='vsubmit floatleft' ".
+                   "onclick=\"selectAll('$field_id');$('#$field_id').select2('close');\">$select".
+                  "</a> ";
+      $output  .= "<a class='vsubmit floatright' onclick=\"deselectAll('$field_id');\">$deselect".
+                  "</a>";
+      $output  .= "</div></div>";
+
+      $js = "
+      var multichecksappend$field_id = false;
+         console.log($('#$field_id'));
+      $('#$field_id').on('select2-open', function() {
+         
+         if (!multichecksappend$field_id) {
+            $('#select2-drop').append($('#selectallbuttons_$field_id').html());
+            multichecksappend$field_id = true;
+         }
+      });";
+      $output .= Html::scriptBlock($js);
+      
+      return $output;
    }
 
 
@@ -4614,22 +4645,41 @@ class Html {
             $options[$tag] = $val;
          }
       }
-
-      $output = Html::hidden($name, $options);
+      
+      $output = "";
+      
+      if (isset($params["multiple"]) && $params["multiple"]) {
+         $options['multiple'] = $params["multiple"];
+         $name = $name."[]";
+         unset($params["multiple"]);
+      }
+      
+      $output .= "<select name='".Html::cleanInputText($name)."' ".Html::parseAttributes($options).">";
+      if (isset($options["multiple"]) && $options["multiple"]) {
+         if (!empty($value)) {
+            foreach ($value as $key => $val) {
+               $output .= "<option selected value='$val'>".$valuename[$key]."</option>";
+            }
+         }
+      } else {
+         $output .= "<option selected value='$value'>$valuename</option>";
+      }
+      $output .= "</select>";
 
       $js = "";
       $js .= " $('#$field_id').select2({
-                        width: '$width',
-                        minimumInputLength: 0,
-                        quietMillis: 100,
-                        dropdownAutoWidth: true,
-                        minimumResultsForSearch: ".$CFG_GLPI['ajax_limit_count'].",
-                        closeOnSelect: false,
-                        ajax: {
-                           url: '$url',
-                           dataType: 'json',
-                           data: function (term, page) {
-                              return { ";
+                  width: '$width',
+                  minimumInputLength: 0,
+                  quietMillis: 100,
+                  dropdownAutoWidth: true,
+                  minimumResultsForSearch: ".$CFG_GLPI['ajax_limit_count'].",
+                  theme: 'bootstrap',
+                  closeOnSelect: false,
+                  ajax: {
+                     url: '$url',
+                     dataType: 'json',
+                     data: function (params) {
+                        return { ";
       foreach ($params as $key => $val) {
          // Specific boolean case
          if (is_bool($val)) {
@@ -4638,65 +4688,45 @@ class Html {
             $js .= "$key: ".json_encode($val).",\n";
          }
       }
-
-      $js .= "               searchText: term,
-                                 page_limit: ".$CFG_GLPI['dropdown_max'].", // page size
-                                 page: page, // page number
-                              };
-                           },
-                           results: function (data, page) {
-//                               var more = (page * ".$CFG_GLPI['dropdown_max'].") < data.total;
-//                               alert(data.count+' '+".$CFG_GLPI['dropdown_max'].");
-                              var more = (data.count >= ".$CFG_GLPI['dropdown_max'].");
-                              return {results: data.results, more: more};
-//                               return {results: data.results};
-                           }
-                        },
-                        initSelection: function (element, callback) {
-                           var id=$(element).val();
-                           var defaultid = '$value';
-                           if (id !== '') {
-                              // No ajax call for first item
-                              if (id === defaultid) {
-                                var data = {id: ".json_encode($value).",
-                                          text: ".json_encode($valuename)."};
-                                 callback(data);
-                              } else {
-                                 $.ajax('$url', {
-                                 data: {";
-         foreach ($params as $key => $val) {
-            $js .= "$key: ".json_encode($val).",\n";
-         }
-
-         $js .= "            _one_id: id},
-                                 dataType: 'json',
-                                 }).done(function(data) { callback(data); });
-                              }
-                           }
-
-                        },
-                        formatResult: function(result, container, query, escapeMarkup) {
-                           var markup=[];
-                           window.Select2.util.markMatch(result.text, query.term, markup, escapeMarkup);
-                           if (result.level) {
-                              var a='';
-                              var i=result.level;
-                              while (i>1) {
-                                 a = a+'&nbsp;&nbsp;&nbsp;';
-                                 i=i-1;
-                              }
-                              return a+'&raquo;'+markup.join('');
-                           }
-                           return markup.join('');
+      $js .= "             searchText: params.term,
+                           page_limit: ".$CFG_GLPI['dropdown_max'].", // page size
+                           page: params.page, // page number
+                        };
+                     },
+                     processResults: function (data, params) {
+                        return {results: data.results, 
+                                pagination: {
+                                   more: (data.count >= ".$CFG_GLPI['dropdown_max'].")
+                                }};
+                     }
+                  },
+                  templateResult : function(result, container) {
+                     if (result.level) {
+                        var a='';
+                        var i=result.level;
+                        while (i>1) {
+                           a = a+'&nbsp;&nbsp;&nbsp;';
+                           i=i-1;
                         }
-
-                     });";
+                        return $('<div/>').html(a+'&raquo;'+result.text).text();
+                     }
+                     return result.text;
+                  }
+               });
+               
+               $( '.select2-container--bootstrap' ).addClass( 'input-sm' );";
+      
       if (!empty($on_change)) {
          $js .= " $('#$field_id').on('change', function(e) {".
                   stripslashes($on_change)."});";
       }
+      
+      if (isset($options["multiple"]) && $options["multiple"]) {
+         $output .= Html::jsSelectAllDropdown($field_id);
+      }
 
       $output .= Html::scriptBlock($js);
+      
       return $output;
    }
 

@@ -109,6 +109,7 @@ class Dropdown {
       $params['permit_select_parent'] = false;
       $params['addicon']              = true;
       $params['specific_tags']        = array();
+      $params['multiple']             = false;
 
 
       if (is_array($options) && count($options)) {
@@ -174,11 +175,13 @@ class Dropdown {
                  'on_change'            => $params['on_change'],
                  'permit_select_parent' => $params['permit_select_parent'],
                  'specific_tags'        => $params['specific_tags'],
+                 'multiple'             => $params['multiple'],
                 );
-
+      
       $output = Html::jsAjaxDropdown($params['name'], $field_id,
                                      $CFG_GLPI['root_doc']."/ajax/getDropdownValue.php",
                                      $p);
+      
       // Display comment
       if ($params['comments']) {
          $comment_id      = Html::cleanId("comment_".$params['name'].$params['rand']);
@@ -462,6 +465,7 @@ class Dropdown {
       $params['emptylabel']   = self::EMPTY_VALUE;
       $params['display']      = true;
       $params['width']        = '80%';
+      $params['rand']         = mt_rand();
 
       if (is_array($options) && count($options)) {
          foreach ($options as $key => $val) {
@@ -482,7 +486,8 @@ class Dropdown {
       return self::showFromArray($name, $options, array('value'   => $params['value'],
                                                         'used'    => $params['used'],
                                                         'width'   => $params['width'],
-                                                        'display' => $params['display']));
+                                                        'display' => $params['display'], 
+                                                        'rand'    => $params['rand']));
    }
 
 
@@ -1795,29 +1800,10 @@ class Dropdown {
 
       // Width set on select
       $output .= Html::jsAdaptDropdown($field_id, array('width' => $param["width"]));
+      
 
       if ($param["multiple"]) {
-         // Hack for All / None because select2 does not provide it
-         $select   = __('All');
-         $deselect = __('None');
-         $output  .= "<div class='invisible' id='selectallbuttons_$field_id'>";
-         $output  .= "<div class='select2-actionable-menu'>";
-         $output  .= "<a class='vsubmit floatleft' ".
-                      "onclick=\"selectAll('$field_id');$('#$field_id').select2('close');\">$select".
-                     "</a> ";
-         $output  .= "<a class='vsubmit floatright' onclick=\"deselectAll('$field_id');\">$deselect".
-                     "</a>";
-         $output  .= "</div></div>";
-
-         $js = "
-         var multichecksappend$field_id = false;
-         $('#$field_id').on('select2-open', function() {
-            if (!multichecksappend$field_id) {
-               $('#select2-drop').append($('#selectallbuttons_$field_id').html());
-               multichecksappend$field_id = true;
-            }
-         });";
-         $output .= Html::scriptBlock($js);
+         $output .= Html::jsSelectAllDropdown($field_id);
       }
       $output .= Ajax::commonDropdownUpdateItem($param, false);
 

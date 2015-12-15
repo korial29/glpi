@@ -50,6 +50,10 @@ if (!defined('GLPI_ROOT')) {
 
 Session::checkLoginUser();
 
+if (!isset($_GET['searchText'])) {
+   $_GET['searchText'] = null;
+}
+
 if (!isset($_GET['right'])) {
    $_GET['right'] = "all";
 }
