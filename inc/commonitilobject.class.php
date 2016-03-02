@@ -2715,7 +2715,7 @@ abstract class CommonITILObject extends CommonDBTM {
 
       $tab[18]['table']               = $this->getTable();
       $tab[18]['field']               = 'due_date';
-      $tab[18]['name']                = __('Due date');
+      $tab[18]['name']                = __('Time to resolve');
       $tab[18]['datatype']            = 'datetime';
       $tab[18]['maybefuture']         = true;
       $tab[18]['massiveaction']       = false;
@@ -2725,7 +2725,7 @@ abstract class CommonITILObject extends CommonDBTM {
 
       $tab[151]['table']              = $this->getTable();
       $tab[151]['field']              = 'due_date';
-      $tab[151]['name']               = __('Due date + Progress');
+      $tab[151]['name']               = __('Time to resolve + Progress');
       $tab[151]['massiveaction']      = false;
       $tab[151]['nosearch']           = true;
       $tab[151]['additionalfields']   = array('status');
@@ -2733,7 +2733,7 @@ abstract class CommonITILObject extends CommonDBTM {
 
       $tab[82]['table']               = $this->getTable();
       $tab[82]['field']               = 'is_late';
-      $tab[82]['name']                = __('Late');
+      $tab[82]['name']                = __('Late resolution');
       $tab[82]['datatype']            = 'bool';
       $tab[82]['massiveaction']       = false;
       $tab[82]['computation']         = "IF(TABLE.`due_date` IS NOT NULL
@@ -4381,7 +4381,7 @@ abstract class CommonITILObject extends CommonDBTM {
       echo "<tr class='tab_bg_2'><td>".__('Opening date')."</td>";
       echo "<td>".Html::convDateTime($this->fields['date'])."</td></tr>";
 
-      echo "<tr class='tab_bg_2'><td>".__('Due date')."</td>";
+      echo "<tr class='tab_bg_2'><td>".__('Time to resolve')."</td>";
       echo "<td>".Html::convDateTime($this->fields['due_date'])."</td></tr>";
 
       if (in_array($this->fields['status'], array_merge($this->getSolvedStatusArray(),
@@ -5102,7 +5102,7 @@ abstract class CommonITILObject extends CommonDBTM {
                                   ($p['output_type'] == Search::HTML_OUTPUT?'<br>':'').
                                     Html::convDateTime($item->fields['begin_waiting_date']));
          } else if ($item->fields['due_date']) {
-            $second_col = sprintf(__('%1$s: %2$s'), __('Due date'),
+            $second_col = sprintf(__('%1$s: %2$s'), __('Time to resolve'),
                                   ($p['output_type'] == Search::HTML_OUTPUT?'<br>':'').
                                     Html::convDateTime($item->fields['due_date']));
          } else {

@@ -3954,8 +3954,8 @@ class Search {
 
          case "glpi_tickets.due_date" :
          case "glpi_problems.due_date" :
-         case "glpi_changes.due_date" :
-            if (($ID <> 151)
+         case "glpi_tickets.time_to_own" :
+             if (($ID <> 151 && $ID <> 158)
                 && !empty($data[$num][0]['name'])
                 && ($data[$num][0]['status'] != CommonITILObject::WAITING)
                 && ($data[$num][0]['name'] < $_SESSION['glpi_currenttime'])) {
@@ -4309,9 +4309,9 @@ class Search {
 
             case "glpi_tickets.due_date" :
             case "glpi_problems.due_date" :
-            case "glpi_changes.due_date" :
+            case "glpi_tickets.time_to_own" :
                // Due date + progress
-               if ($ID == 151) {
+               if ($ID == 151 || $ID == 158) {
                   $out = Html::convDate($data[$num][0]['name']);
 
                   // No due date in waiting status
@@ -4325,19 +4325,35 @@ class Search {
                       || ($data[$num][0]['status'] == Ticket::CLOSED)) {
                      return $out;
                   }
+
+                  // Get Ticket slts fields name
+                  switch ($table.$field) {
+                     case "glpi_tickets.due_date" :
+                        list($dateField, $sltField) = SLT::getSltFieldNames(SLT::TTR);
+                        break;
+                     case "glpi_tickets.time_to_own" :
+                        list($dateField, $sltField) = SLT::getSltFieldNames(SLT::TTO);
+                        break;
+                     default:
+                        break;
+                  }
+
                   $itemtype = getItemTypeForTable($table);
                   $item = new $itemtype();
                   $item->getFromDB($data['id']);
                   $percentage  = 0;
                   $totaltime   = 0;
                   $currenttime = 0;
-                  if ($item->isField('slas_id') && $item->fields['slas_id'] != 0) { // Have SLA
-                     $sla = new SLA();
-                     $sla->getFromDB($item->fields['slas_id']);
-                     $currenttime = $sla->getActiveTimeBetween($item->fields['date'],
+                  $sltField    = 'slts_id';
+
+                  if ($item->isField($sltField) && $item->fields[$sltField] != 0) { // Have SLT
+                     $slt = new SLT();
+                     $slt->getFromDB($item->fields[$sltField]);
+                     $currenttime = $slt->getActiveTimeBetween($item->fields['date'],
                                                                date('Y-m-d H:i:s'));
-                     $totaltime   = $sla->getActiveTimeBetween($item->fields['date'],
+                     $totaltime   = $slt->getActiveTimeBetween($item->fields['date'],
                                                                $data[$num][0]['name']);
+
                   } else {
                      $calendars_id = Entity::getUsedConfig('calendars_id',
                                                            $item->fields['entities_id']);
