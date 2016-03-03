@@ -6435,6 +6435,7 @@ CREATE TABLE `glpi_tickets` (
   `slt_ttr` int(11) NOT NULL DEFAULT '0',
   `slalevels_id` int(11) NOT NULL DEFAULT '0',
   `due_date` datetime DEFAULT NULL,
+  `time_to_own` datetime DEFAULT NULL,
   `begin_waiting_date` datetime DEFAULT NULL,
   `sla_waiting_duration` int(11) NOT NULL DEFAULT '0',
   `waiting_duration` int(11) NOT NULL DEFAULT '0',
