@@ -169,7 +169,7 @@ class SlaLevel_Ticket extends CommonDBTM {
          foreach($ticket->getSuppliers(CommonITILActor::ASSIGN) as $supplier) {
             $ticket->fields['_suppliers_id_assign'][] = $supplier['suppliers_id'];
          }
-         Toolbox::logDebug($ticket);
+
          $slalevel = new SlaLevel();
          $slt      = new SLT();
          // Check if slt datas are OK
