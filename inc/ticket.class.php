@@ -1130,12 +1130,12 @@ class Ticket extends CommonITILObject {
     * @param type $slts_id
     */
    function manageSltLevel($slts_id) {
-
       $calendars_id = Entity::getUsedConfig('calendars_id', $this->fields['entities_id']);
       // Add first level in working table
       $slalevels_id = SlaLevel::getFirstSltLevel($slts_id);
 
       $slt          = new SLT();
+
       if ($slt->getFromDB($slts_id)) {
          $slt->setTicketCalendar($calendars_id);
          $slt->addLevelToDo($this, $slalevels_id);

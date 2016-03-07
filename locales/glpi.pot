@@ -15830,3 +15830,31 @@ msgid ""
 "Connection to database failed, verify the connection parameters included in "
 "config_db.php file"
 msgstr ""
+
+#: inc/ticket.class.php:2270
+msgid "Time to resolve"
+msgstr ""
+
+#: inc/ticket.class.php:2261
+msgid "Time to own"
+msgstr ""
+
+#: inc/slt.class.php:289
+msgid "Add a new SLT"
+msgstr ""
+
+#: commonitilobject.class.php:2734
+msgid "Time to resolve + Progress"
+msgstr ""
+
+#: commonitilobject.class.php:2741
+msgid "Time to own + Progress"
+msgstr ""
+
+#: commonitilobject.class.php:2748
+msgid "Late resolution"
+msgstr ""
+
+#: commonitilobject.class.php:2760
+msgid "Late own"
+msgstr ""
