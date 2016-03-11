@@ -3899,7 +3899,7 @@ class Ticket extends CommonITILObject {
          }
          /// Auto submit to load template
          if (!$ID) {
-            $opt['on_change'] = 'this.form.submit()';
+//            $opt['on_change'] = 'this.form.submit()';
          }
          /// if category mandatory, no empty choice
          /// no empty choice is default value set on ticket creation, else yes
@@ -3921,6 +3921,7 @@ class Ticket extends CommonITILObject {
             default :
                break;
          }
+         $opt['multiple'] = true;
          echo "<span id='show_category_by_type'>";
          ITILCategory::dropdown($opt);
          echo "</span>";

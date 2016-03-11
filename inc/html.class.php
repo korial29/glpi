@@ -4553,7 +4553,7 @@ class Html {
                   dropdownAutoWidth: true,
                   minimumResultsForSearch: ".$CFG_GLPI['ajax_limit_count'].",
                   theme: 'bootstrap',
-                  closeOnSelect: false
+                  closeOnSelect: true
              });
              $( '.select2-container--bootstrap' ).addClass( 'input-sm' );";
       return Html::scriptBlock($js);
@@ -4567,28 +4567,73 @@ class Html {
     *
     * @return String
    **/
-   static function jsSelectAllDropdown($field_id){
+   static function jsSelectAllDropdown($field_id, $url, $params=array()){
+      global $CFG_GLPI;
+            
       $select   = __('All');
       $deselect = __('None');
       $output  = "<div class='invisible' id='selectallbuttons_$field_id'>";
       $output  .= "<div class='select2-actionable-menu'>";
-      $output  .= "<a class='vsubmit floatleft' ".
+      $output  .= "<a class='vsubmit'".
                    "onclick=\"selectAll('$field_id');$('#$field_id').select2('close');\">$select".
                   "</a> ";
-      $output  .= "<a class='vsubmit floatright' onclick=\"deselectAll('$field_id');\">$deselect".
+      $output  .= "<a class='vsubmit' onclick=\"deselectAll('$field_id');\">$deselect".
                   "</a>";
       $output  .= "</div></div>";
 
       $js = "
       var multichecksappend$field_id = false;
-         console.log($('#$field_id'));
-      $('#$field_id').on('select2-open', function() {
-         
+      $('#$field_id').on('select2:open', function() {
          if (!multichecksappend$field_id) {
-            $('#select2-drop').append($('#selectallbuttons_$field_id').html());
+            $('.select2-selection--multiple').append($('#selectallbuttons_$field_id').html());
             multichecksappend$field_id = true;
          }
-      });";
+      });
+
+      function selectAll(id) {
+         $.ajax({
+            url: '$url',
+            dataType: 'json',
+            data: { ";
+      foreach ($params as $key => $val) {
+         // Specific boolean case
+         if (is_bool($val)) {
+            $js .= "$key: ".($val?1:0).",\n";
+         } else {
+            $js .= "$key: ".json_encode($val).",\n";
+         }
+      }
+      $js .= "page_limit: ".$CFG_GLPI['dropdown_max'].", // page size
+            },
+            success: function (data, opts) {
+               var selected = [];
+               selected = selectRecursive(data.results, id, selected);
+               
+               $('#'+id).html('');
+               $.each(selected, function(index, value){
+                  $('#'+id).append(\"<option value='\"+index+\"' selected>\"+value+\"</option>\");
+               });
+               
+               $('#'+id).trigger('change');
+            }
+         });
+      }
+      
+      function selectRecursive(results, id, selected) {
+         $.each(results, function(index, value){
+            if (value.children) {
+               selected = selectRecursive(value.children, id, selected);
+            } else {
+               selected.push(value.text);
+            }
+         });
+         
+         return selected;
+      }
+      
+      function deselectAll(id) {
+         $('#'+id).val('').trigger('change');
+      }";
       $output .= Html::scriptBlock($js);
       
       return $output;
@@ -4674,7 +4719,7 @@ class Html {
                   dropdownAutoWidth: true,
                   minimumResultsForSearch: ".$CFG_GLPI['ajax_limit_count'].",
                   theme: 'bootstrap',
-                  closeOnSelect: false,
+                  closeOnSelect: true,
                   ajax: {
                      url: '$url',
                      dataType: 'json',
@@ -4722,7 +4767,7 @@ class Html {
       }
       
       if (isset($options["multiple"]) && $options["multiple"]) {
-         $output .= Html::jsSelectAllDropdown($field_id);
+         $output .= Html::jsSelectAllDropdown($field_id, $url, $params);
       }
 
       $output .= Html::scriptBlock($js);

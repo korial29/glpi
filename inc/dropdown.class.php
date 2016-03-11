@@ -121,22 +121,16 @@ class Dropdown {
       $name         = $params['emptylabel'];
       $comment      = "";
 
-      // Check default value for dropdown : need to be a numeric
-      if ((strlen($params['value']) == 0) || !is_numeric($params['value']) && $params['value'] != 'mygroups') {
-         $params['value'] = 0;
-      }
-
-      if (isset($params['toadd'][$params['value']])) {
-         $name = $params['toadd'][$params['value']];
-      } else if (($params['value'] > 0)
-                 || (($itemtype == "Entity")
-                     && ($params['value'] >= 0))) {
-         $tmpname = self::getDropdownName($table, $params['value'], 1);
-
-         if ($tmpname["name"] != "&nbsp;") {
-            $name    = $tmpname["name"];
-            $comment = $tmpname["comment"];
+      // Get value name and comment
+      if ($params['multiple'] == true) {
+         $name       = array();
+         $tmpComment = array();
+         foreach ($params['value'] as $key => $val) {
+            list($name[$key], $tmpComment[$key]) = self::getValueName($val, $item, $params);
          }
+         $comment = implode("<br>", $tmpComment);
+      } else {
+         list($name, $comment) = self::getValueName($val, $item, $params);
       }
 
       // Manage entity_sons
@@ -156,10 +150,6 @@ class Dropdown {
       // Manage condition
       if (!empty($params['condition'])) {
         $params['condition'] = static::addNewCondition($params['condition']);
-      }
-
-      if (!$item instanceof CommonTreeDropdown) {
-         $name = Toolbox::unclean_cross_side_scripting_deep($name);
       }
       $p = array('value'                => $params['value'],
                  'valuename'            => $name,
@@ -252,6 +242,36 @@ class Dropdown {
         $sha1=sha1($condition);
         $_SESSION['glpicondition'][$sha1] = $condition;
         return $sha1;
+    }
+    
+    static function getValueName($value, $item, $params){
+      $comment = $name = null;
+             
+      // Check default value for dropdown : need to be a numeric
+      if ((strlen($value) == 0) || !is_numeric($value) && $value != 'mygroups') {
+         $value = 0;
+      }
+      
+      $table = $item->getTable();
+      
+      if (isset($params['toadd'][$value])) {
+         $name = $params['toadd'][$value];
+      } else if (($value > 0)
+                 || (($item->getType() == "Entity")
+                     && ($value >= 0))) {
+         $tmpname = self::getDropdownName($table, $value, 1);
+
+         if ($tmpname["name"] != "&nbsp;") {
+            $name    = $tmpname["name"];
+            $comment = $tmpname["comment"];
+         }
+      }
+
+      if (!$item instanceof CommonTreeDropdown) {
+         $name = Toolbox::unclean_cross_side_scripting_deep($name);
+      }
+      
+      return array($name, $comment);
     }
 
    /**
